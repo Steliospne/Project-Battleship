@@ -1,74 +1,44 @@
+const Ship = require("./ship");
+
 module.exports = class Gameboard {
   constructor() {
-    this.nodes = [];
+    this.nodes = {};
     this.missedShots = [];
     this.inactiveNodes = [];
+    this.init();
   }
 
   init() {
     for (let x = 0; x < 10; x++) {
-      const xAxis = String.fromCharCode(97 + x);
-      for (let y = 1; y < 11; y++) {
-        const yAxis = y;
-        this.nodes.push(new Node(xAxis, yAxis));
+      const yAxis = String.fromCharCode(97 + x);
+      this.nodes[yAxis] = [];
+
+      // for visualization purposes
+      // ******************************
+      for (let i = 0; i < 10; i++) {
+        this.nodes[yAxis].push(0);
       }
+      // ******************************
+
+      // for production uncomment the following line.
+      // this.nodes[yAxis] = Array(10);
+    }
+    console.table(this.nodes);
+  }
+
+  placeShip(coordinate, ship) {
+    const nodeY = Object.keys(this.nodes);
+    const isInRangeX = nodeY.includes(coordinate[0]);
+    const isInRangeY = +coordinate[1] < 0 || +coordinate[1] > 9;
+
+    if (!(isInRangeX || isInRangeY)) {
+      return;
     }
   }
 
-  gameHasEnded(fleet) {
-    let sunkShipCount = 0;
-    for (const ship of fleet) {
-      ship.isSunk === true ? sunkShipCount++ : sunkShipCount;
-    }
-    return sunkShipCount === fleet.length ? true : false;
-  }
+  // TODO
 
-  coordinateTransform(x, y) {
-    const xMap = new Map();
-    for (let i = 0; i < 10; i++) {
-      xMap.set(String.fromCharCode(97 + i), i * 10);
-    }
-    const targetNodeIndex = xMap.get(x) + (y - 1);
-    return targetNodeIndex;
-  }
-
-  receiveAttack(x, y) {
-    if (!/[a - j]/.test(x) || y < 0 || y > 10) return false;
-    targetNodeIndex = this.coordinateTransform(x, y);
-    targetNode = this.nodes[targetNodeIndex];
-
-    if (targetNode.hasShip) {
-      return targetNode;
-    } else {
-      this.inactiveNodes.push(targetNode);
-      this.missedShots.push(targetNode);
-    }
-  }
-
-  shipPlacement(x, y, ship) {
-    if (!/[a - j]/.test(x) || y < 0 || y > 10) return false;
-    for (let i = 0; i < ship.length; i++) {
-      let index;
-      if (ship.orientation == "horizontal") {
-        index = gameboard.coordinateTransform(x, y + i);
-        gameboard.nodes[index].hasShip = ship;
-        return true;
-      } else {
-        index = gameboard.coordinateTransform(
-          String.fromCharCode(x.charCodeAt() + i),
-          y
-        );
-        gameboard.nodes[index].hasShip = ship;
-        return true;
-      }
-    }
-  }
+  // gameHasEnded() {}
+  // coordinateTransform() {}
+  // receiveAttack() {}
 };
-
-class Node {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.hasShip = null;
-  }
-}

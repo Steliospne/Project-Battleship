@@ -1,155 +1,45 @@
 const Gameboard = require("../gameboard");
 
-describe("Gameboard Initialization Tests", () => {
-  const gameboard = new Gameboard();
-  gameboard.init();
+const gameboard = new Gameboard();
 
-  it("should initialize with correct num of nodes and no ships", () => {
-    for (const node of gameboard.nodes) {
-      expect(node.hasShip).toBeNull();
+// Using empty arrays to mock ship object so the tests,
+// are not depended on more than one module
+const fleet = {
+  carrier: new Array(5),
+  battleship: new Array(4),
+  cruiser: new Array(3),
+  submarine: new Array(3),
+  destroyer: new Array(2),
+};
+
+const ships = Object.values(fleet);
+
+describe("Gameboard Tests", () => {
+  const mockPlaceShip = jest.fn((coordinate, ship) => {
+    const nodeY = Object.keys(gameboard.nodes);
+    const isInRangeX = nodeY.includes(coordinate[0]);
+    const isInRangeY = +coordinate[1] < 0 || +coordinate[1] > 9;
+
+    if (!(isInRangeX || isInRangeY)) {
+      return;
     }
-    expect(gameboard.nodes.length).toBe(10 * 10);
+    return 1;
   });
 
-  test("x axis is correct", () => {
-    for (const node of gameboard.nodes) {
-      expect(node.x).toMatch(/[a-j]/);
+  test.each(["a10", "x0", "k22"])(
+    "Invalid coordinates (%s) should just return",
+    (input) => {
+      mockPlaceShip(input);
+
+      expect(mockPlaceShip).toHaveReturned();
     }
-  });
+  );
 
-  test("y axis is correct", () => {
-    let count = 1;
-    for (const node of gameboard.nodes) {
-      expect(node.y).toBe(count);
-      count == 10 ? (count = 1) : count++;
+  test.each(["a3", "b6", "h8"])(
+    "Valid coordinates (%s) should return with 1",
+    (input) => {
+      mockPlaceShip(input);
+      expect(mockPlaceShip).toHaveLastReturnedWith(1);
     }
-  });
-
-  test("coordinate transform", () => {
-    expect(gameboard.coordinateTransform("a", 3)).toBe(2);
-  });
-});
-
-describe("Correct ship placement", () => {
-  const gameboard = new Gameboard();
-  gameboard.init();
-
-  const ship = (length) => {
-    return {
-      length: length,
-      hits: 0,
-      isSunk: false,
-      orientation: "vertical",
-    };
-  };
-
-  const fleet = {
-    carrier: ship(5),
-    battleship: ship(4),
-    cruiser: ship(3),
-    submarine: ship(3),
-    destroyer: ship(2),
-  };
-
-  test.each([
-    ["a", 4, true],
-    ["k", 5, false],
-  ])("place ship", (x, y, expectation) => {
-    const fakePlaceShip = (x, y, ship) => {
-      if (!/[a - j]/.test(x) || y < 0 || y > 10) return false;
-      for (let i = 0; i < ship.length; i++) {
-        let index;
-        if (ship.orientation == "horizontal") {
-          index = gameboard.coordinateTransform(x, y + i);
-          gameboard.nodes[index].hasShip = ship;
-          return true;
-        } else {
-          index = gameboard.coordinateTransform(
-            String.fromCharCode(x.charCodeAt() + i),
-            y
-          );
-          gameboard.nodes[index].hasShip = ship;
-          return true;
-        }
-      }
-    };
-
-    expect(fakePlaceShip(x, y, fleet.carrier)).toBe(expectation);
-  });
-});
-
-describe("Gameboard receiveAttack() Tests", () => {
-  const gameboard = new Gameboard();
-  gameboard.init();
-
-  let targetNode;
-
-  const fakeFn = (x, y) => {
-    if (!/[a - j]/.test(x) || y < 0 || y > 10) return false;
-    const xMap = new Map();
-    for (let i = 0; i < 10; i++) {
-      xMap.set(String.fromCharCode(97 + i), i * 10);
-    }
-    const targetNodeIndex = xMap.get(x) + (y - 1);
-    targetNode = gameboard.nodes[targetNodeIndex];
-
-    if (targetNode.hasShip) {
-      return targetNode;
-    } else {
-      gameboard.missedShots.push(targetNode);
-    }
-  };
-
-  test("gets the correct node", () => {
-    fakeFn("a", 4);
-
-    expect(targetNode.x).toBe("a");
-    expect(targetNode.y).toBe(4);
-  });
-
-  test("should miss if no ship and keep track of the attack coordinates", () => {
-    fakeFn("a", 4);
-    expect(gameboard.missedShots[0]).toBe(targetNode);
-    expect(targetNode.x).toBe("a");
-    expect(targetNode.y).toBe(4);
-  });
-
-  test("should return node if hit", () => {
-    gameboard.nodes[3].hasShip = true;
-    expect(fakeFn("a", 4)).toBe(targetNode);
-  });
-});
-
-describe("End of game", () => {
-  const gameboard = new Gameboard();
-  gameboard.init();
-
-  const ship = (length) => {
-    return {
-      length: length,
-      hits: 0,
-      isSunk: false,
-      orientation: "vertical",
-    };
-  };
-
-  const fleet = [
-    { carrier: ship(5) },
-    { battleship: ship(4) },
-    { cruiser: ship(3) },
-    { submarine: ship(3) },
-    { destroyer: ship(2) },
-  ];
-
-  test("should not end", () => {
-    expect(gameboard.gameHasEnded(fleet)).toBe(false);
-  });
-
-  test("should end", () => {
-    for (let ship of fleet) {
-      ship.isSunk = true;
-    }
-
-    expect(gameboard.gameHasEnded(fleet)).toBe(true);
-  });
+  );
 });
