@@ -2,7 +2,7 @@ module.exports = class Ship {
   constructor(length) {
     this.length = length;
     this.hits = 0;
-    this.orientation = "horizontal";
+    this.isHorizontal = "horizontal";
   }
 
   isSunk() {
