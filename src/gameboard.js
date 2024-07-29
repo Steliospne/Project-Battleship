@@ -31,10 +31,10 @@ module.exports = class Gameboard {
     const yNodes = Object.keys(this.nodes);
     const xInRange = yNodes.includes(x);
     const yInRange = y >= 0 && y <= 9;
-    const shipLocation = [];
+    let shipLocations = [];
 
     if (!xInRange || !yInRange || coordinate.length > 2) {
-      return;
+      return 0;
     }
 
     if (ship.isHorizontal) {
@@ -43,20 +43,27 @@ module.exports = class Gameboard {
         const newY_InRange = newY >= 0 && newY <= 9;
 
         if (!xInRange || !newY_InRange) {
-          return;
+          shipLocations = [];
+          return 0;
         }
-        this.nodes[x][newY] = 1;
-        shipLocation.push(x + newY);
+        shipLocations.push(newY);
+        shipLocations.forEach((shipLocation) => {
+          this.nodes[x][shipLocation] = ship;
+        });
       }
     } else {
       for (let i = 0; i < ship.length; i++) {
         const newX = yNodes.indexOf(x) + i;
-        const newX_InRange = newX <= yNodes.length;
+        const newX_InRange = newX < yNodes.length;
 
         if (!newX_InRange || !yInRange) {
-          return;
+          shipLocations = [];
+          return 0;
         }
-        this.nodes[yNodes[newX]][y] = 1;
+        shipLocations.push(yNodes[newX]);
+        shipLocations.forEach((shipLocation) => {
+          this.nodes[shipLocation][y] = ship;
+        });
       }
     }
     return 1;

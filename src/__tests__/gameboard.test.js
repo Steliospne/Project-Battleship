@@ -21,10 +21,10 @@ describe("Gameboard Tests", () => {
     const yNodes = Object.keys(gameboard.nodes);
     const xInRange = yNodes.includes(x);
     const yInRange = y >= 0 && y <= 9;
-    const shipLocation = [];
+    let shipLocations = [];
 
     if (!xInRange || !yInRange || coordinate.length > 2) {
-      return;
+      return 0;
     }
 
     if (ship.isHorizontal) {
@@ -33,54 +33,69 @@ describe("Gameboard Tests", () => {
         const newY_InRange = newY >= 0 && newY <= 9;
 
         if (!xInRange || !newY_InRange) {
-          return;
+          shipLocations = [];
+          return 0;
         }
-        gameboard.nodes[x][newY] = 1;
-        shipLocation.push(x + newY);
+        shipLocations.push(newY);
+        shipLocations.forEach((shipLocation) => {
+          gameboard.nodes[x][shipLocation] = 1;
+        });
       }
     } else {
       for (let i = 0; i < ship.length; i++) {
         const newX = yNodes.indexOf(x) + i;
-        const newX_InRange = newX <= yNodes.length;
+        const newX_InRange = newX < yNodes.length;
 
         if (!newX_InRange || !yInRange) {
-          return;
+          shipLocations = [];
+          return 0;
         }
-        gameboard.nodes[yNodes[newX]][y] = 1;
+        shipLocations.push(yNodes[newX]);
+        shipLocations.forEach((shipLocation) => {
+          gameboard.nodes[shipLocation][y] = 1;
+        });
       }
     }
     return 1;
   });
 
   test.each(["a10", "x0", "k22"])(
-    "Invalid coordinates (%s) should just return",
+    "Invalid coordinates (%s) should return 0",
     (input) => {
       mockPlaceShip(input);
 
-      expect(mockPlaceShip).toHaveReturned();
+      expect(mockPlaceShip).toHaveReturnedWith(0);
     }
   );
 
-  test.each([["a5", ships[0]]])(
+  test.each([
+    ["a1", ships, 1],
+    ["a5", ships, 1],
+    ["a9", ships, 0],
+  ])(
     "Tests that ships can't be placed out of the board (%s) Horizontal",
-    (input, ship) => {
-      // ships.forEach((ship) => {
-      mockPlaceShip(input, ship);
-      expect(mockPlaceShip).toHaveLastReturnedWith(1);
-      gameboard.init();
-      // });
+    (input, ships, expected) => {
+      ships.forEach((ship) => {
+        mockPlaceShip(input, ship);
+        expect(mockPlaceShip).toHaveReturnedWith(expected);
+        gameboard.init();
+      });
     }
   );
 
-  test.each([["f5", ships[0]]])(
+  test.each([
+    ["a5", ships, 1],
+    ["f5", ships, 1],
+    ["j5", ships, 0],
+  ])(
     "Tests that ships can't be placed out of the board (%s) Vertical",
-    (input, ship) => {
-      ship.isHorizontal = false;
-      // ships.forEach((ship) => {
-      mockPlaceShip(input, ship);
-      expect(mockPlaceShip).toHaveLastReturnedWith(1);
-      gameboard.init();
-      // });
+    (input, ships, expected) => {
+      ships.forEach((ship) => {
+        ship.isHorizontal = false;
+        mockPlaceShip(input, ship);
+        expect(mockPlaceShip).toHaveReturnedWith(expected);
+        gameboard.init();
+      });
     }
   );
 });
