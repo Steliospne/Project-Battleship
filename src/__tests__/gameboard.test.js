@@ -5,11 +5,46 @@ const gameboard = new Gameboard();
 // Using empty arrays to mock ship object so the tests,
 // are not depended on more than one module
 const fleet = {
-  carrier: { length: 5, isHorizontal: true },
-  battleship: { length: 4, isHorizontal: true },
-  cruiser: { length: 3, isHorizontal: true },
-  submarine: { length: 3, isHorizontal: true },
-  destroyer: { length: 2, isHorizontal: true },
+  carrier: {
+    length: 5,
+    hits: 0,
+    isHorizontal: true,
+    hit() {
+      this.hits += 1;
+    },
+  },
+  battleship: {
+    length: 4,
+    hits: 0,
+    isHorizontal: true,
+    hit() {
+      this.hits += 1;
+    },
+  },
+  cruiser: {
+    length: 3,
+    hits: 0,
+    isHorizontal: true,
+    hit() {
+      this.hits += 1;
+    },
+  },
+  submarine: {
+    length: 3,
+    hits: 0,
+    isHorizontal: true,
+    hit() {
+      this.hits += 1;
+    },
+  },
+  destroyer: {
+    length: 2,
+    hits: 0,
+    isHorizontal: true,
+    hit() {
+      this.hits += 1;
+    },
+  },
 };
 
 const ships = Object.values(fleet);
@@ -37,8 +72,9 @@ describe("Gameboard Tests", () => {
           return 0;
         }
         shipLocations.push(newY);
-        shipLocations.forEach((shipLocation) => {
-          gameboard.nodes[x][shipLocation] = 1;
+        shipLocations.forEach((shipLocationY) => {
+          gameboard.nodes[x][shipLocationY] = ship;
+          gameboard.inactiveNodes.push(x + shipLocationY);
         });
       }
     } else {
@@ -51,12 +87,25 @@ describe("Gameboard Tests", () => {
           return 0;
         }
         shipLocations.push(yNodes[newX]);
-        shipLocations.forEach((shipLocation) => {
-          gameboard.nodes[shipLocation][y] = 1;
+        shipLocations.forEach((shipLocationX) => {
+          gameboard.nodes[shipLocationX][y] = ship;
+          gameboard.inactiveNodes.push(shipLocationX + y);
         });
       }
     }
     return 1;
+  });
+
+  const mockReceiveHit = jest.fn((coordinates) => {
+    const x = coordinates[0];
+    const y = +coordinates[1];
+
+    if (typeof gameboard.nodes[x][y] === "object") {
+      gameboard.nodes[x][y].hit();
+      return;
+    }
+    gameboard.missedShots.push(coordinates);
+    gameboard.inactiveNodes.push(coordinates);
   });
 
   test.each(["a10", "x0", "k22"])(
@@ -94,8 +143,23 @@ describe("Gameboard Tests", () => {
         ship.isHorizontal = false;
         mockPlaceShip(input, ship);
         expect(mockPlaceShip).toHaveReturnedWith(expected);
+        ship.isHorizontal = true;
         gameboard.init();
       });
     }
   );
+
+  test("Should be able to receive a hit", () => {
+    ships.forEach((ship) => {
+      mockPlaceShip("a0", ship);
+      mockReceiveHit("a0");
+      expect(ship.hits).toBe(1);
+    });
+  });
+
+  test("If the hit is a miss should be stored in missedShots", () => {
+    gameboard.init();
+    mockReceiveHit("f6");
+    expect(gameboard.missedShots).toContain("f6");
+  });
 });

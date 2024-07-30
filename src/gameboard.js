@@ -47,8 +47,9 @@ module.exports = class Gameboard {
           return 0;
         }
         shipLocations.push(newY);
-        shipLocations.forEach((shipLocation) => {
-          this.nodes[x][shipLocation] = ship;
+        shipLocations.forEach((shipLocationX) => {
+          this.nodes[x][shipLocationX] = ship;
+          this.inactiveNodes.push(shipLocationX + y);
         });
       }
     } else {
@@ -61,17 +62,29 @@ module.exports = class Gameboard {
           return 0;
         }
         shipLocations.push(yNodes[newX]);
-        shipLocations.forEach((shipLocation) => {
-          this.nodes[shipLocation][y] = ship;
+        shipLocations.forEach((shipLocationY) => {
+          this.nodes[shipLocationY][y] = ship;
+          this.inactiveNodes.push(x + shipLocationY);
         });
       }
     }
     return 1;
   }
 
+  receiveAttack(coordinates) {
+    const x = coordinates[0];
+    const y = +coordinates[1];
+
+    if (typeof this.nodes[x][y] === "object") {
+      this.nodes[x][y].hit();
+      return;
+    }
+    this.missedShots.push(coordinates);
+    this.inactiveNodes.push(coordinates);
+  }
+
   // TODO
 
   // gameHasEnded() {}
   // coordinateTransform() {}
-  // receiveAttack() {}
 };
