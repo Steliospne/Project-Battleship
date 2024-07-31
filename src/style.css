@@ -1,7 +1,61 @@
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --board_width: 50dvw;
+  --board_height: var(--board_width);
+}
+
+.main {
+  height: 100%;
+}
+
+.player_1Board,
+.row {
+  display: flex;
+}
+
+.player_1Board {
+  width: var(--board_width);
+  height: var(--board_height);
+  flex-direction: column;
+  /* border: 2px solid black; */
+}
+
+.row {
+  flex: 1;
+}
+
+.node {
+  flex: 1;
+  border: 2px solid black;
+}
+
+.node:nth-child(2) {
+  border-left-width: 4px;
+}
+
+.node:nth-child(11) {
+  border-right-width: 4px;
+}
+
+.row:nth-child(2) > * {
+  border-top-width: 4px;
+}
+
+.row:nth-child(11) > * {
+  border-bottom-width: 4px;
+}
+
+.node:first-child {
+  border-width: 0;
+}
+
+.row:first-child > * {
+  border-width: 0;
 }
