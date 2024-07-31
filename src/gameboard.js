@@ -24,13 +24,13 @@ module.exports = class Gameboard {
 
       // for visualization purposes
       // ******************************
-      for (let i = 0; i < 10; i++) {
-        this.nodes[yAxis].push(0);
-      }
+      // for (let i = 0; i < 10; i++) {
+      //   this.nodes[yAxis].push(0);
+      // }
       // ******************************
 
       // for production uncomment the following line.
-      // this.nodes[yAxis] = Array(10);
+      this.nodes[yAxis] = Array(10);
     }
   }
 
