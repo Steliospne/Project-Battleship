@@ -12,6 +12,9 @@ const fleet = {
     hit() {
       this.hits += 1;
     },
+    isSunk() {
+      return this.hits === this.length ? true : false;
+    },
   },
   battleship: {
     length: 4,
@@ -19,6 +22,9 @@ const fleet = {
     isHorizontal: true,
     hit() {
       this.hits += 1;
+    },
+    isSunk() {
+      return this.hits === this.length ? true : false;
     },
   },
   cruiser: {
@@ -28,6 +34,9 @@ const fleet = {
     hit() {
       this.hits += 1;
     },
+    isSunk() {
+      return this.hits === this.length ? true : false;
+    },
   },
   submarine: {
     length: 3,
@@ -35,6 +44,9 @@ const fleet = {
     isHorizontal: true,
     hit() {
       this.hits += 1;
+    },
+    isSunk() {
+      return this.hits === this.length ? true : false;
     },
   },
   destroyer: {
@@ -44,13 +56,16 @@ const fleet = {
     hit() {
       this.hits += 1;
     },
+    isSunk() {
+      return this.hits === this.length ? true : false;
+    },
   },
 };
 
 const ships = Object.values(fleet);
 
 describe("Gameboard Tests", () => {
-  const mockPlaceShip = jest.fn((coordinate, ship) => {
+  const mock_placeShip = jest.fn((coordinate, ship) => {
     const x = coordinate[0];
     const y = Number(coordinate[1]);
     const yNodes = Object.keys(gameboard.nodes);
@@ -96,7 +111,7 @@ describe("Gameboard Tests", () => {
     return 1;
   });
 
-  const mockReceiveHit = jest.fn((coordinates) => {
+  const mock_receiveHit = jest.fn((coordinates) => {
     const x = coordinates[0];
     const y = +coordinates[1];
 
@@ -108,12 +123,22 @@ describe("Gameboard Tests", () => {
     gameboard.inactiveNodes.push(coordinates);
   });
 
+  const mock_isGameOver = jest.fn(() => {
+    let sunkShipCount = 0;
+    for (const ship of ships) {
+      if (ship.isSunk()) {
+        sunkShipCount++;
+      }
+    }
+    return sunkShipCount === ships.length ? true : false;
+  });
+
   test.each(["a10", "x0", "k22"])(
     "Invalid coordinates (%s) should return 0",
     (input) => {
-      mockPlaceShip(input);
+      mock_placeShip(input);
 
-      expect(mockPlaceShip).toHaveReturnedWith(0);
+      expect(mock_placeShip).toHaveReturnedWith(0);
     }
   );
 
@@ -125,8 +150,8 @@ describe("Gameboard Tests", () => {
     "Tests that ships can't be placed out of the board (%s) Horizontal",
     (input, ships, expected) => {
       ships.forEach((ship) => {
-        mockPlaceShip(input, ship);
-        expect(mockPlaceShip).toHaveReturnedWith(expected);
+        mock_placeShip(input, ship);
+        expect(mock_placeShip).toHaveReturnedWith(expected);
         gameboard.init();
       });
     }
@@ -141,8 +166,8 @@ describe("Gameboard Tests", () => {
     (input, ships, expected) => {
       ships.forEach((ship) => {
         ship.isHorizontal = false;
-        mockPlaceShip(input, ship);
-        expect(mockPlaceShip).toHaveReturnedWith(expected);
+        mock_placeShip(input, ship);
+        expect(mock_placeShip).toHaveReturnedWith(expected);
         ship.isHorizontal = true;
         gameboard.init();
       });
@@ -151,15 +176,30 @@ describe("Gameboard Tests", () => {
 
   test("Should be able to receive a hit", () => {
     ships.forEach((ship) => {
-      mockPlaceShip("a0", ship);
-      mockReceiveHit("a0");
+      mock_placeShip("a0", ship);
+      mock_receiveHit("a0");
       expect(ship.hits).toBe(1);
     });
   });
 
   test("If the hit is a miss should be stored in missedShots", () => {
     gameboard.init();
-    mockReceiveHit("f6");
+    mock_receiveHit("f6");
     expect(gameboard.missedShots).toContain("f6");
+  });
+
+  test("If no ship or some ships are alive the game should continue", () => {
+    mock_isGameOver();
+    expect(mock_isGameOver).toHaveReturnedWith(false);
+  });
+
+  test("If no ship alive the game should end", () => {
+    ships.forEach((ship) => {
+      ship.hits = ship.length;
+    });
+
+    mock_isGameOver();
+
+    expect(mock_isGameOver).toHaveReturnedWith(true);
   });
 });
