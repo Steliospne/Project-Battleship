@@ -1,8 +1,19 @@
+const Ship = require("./ship");
+
 module.exports = class Gameboard {
   constructor() {
     this.nodes = {};
     this.missedShots = [];
     this.inactiveNodes = [];
+
+    this.fleet = {
+      carrier: new Ship(5),
+      battleship: new Ship(4),
+      cruiser: new Ship(3),
+      submarine: new Ship(3),
+      destroyer: new Ship(2),
+    };
+
     this.init();
   }
 
@@ -81,8 +92,15 @@ module.exports = class Gameboard {
     this.inactiveNodes.push(coordinates);
   }
 
-  // TODO
+  isGameOver() {
+    const ships = Object.values(this.fleet);
+    let sunkShipCount = 0;
 
-  // gameHasEnded() {}
-  // coordinateTransform() {}
+    for (const ship of ships) {
+      if (ship.isSunk()) {
+        sunkShipCount++;
+      }
+    }
+    return sunkShipCount === ships.length ? true : false;
+  }
 };
