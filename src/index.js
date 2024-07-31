@@ -1,3 +1,7 @@
-const Gameboard = require("./gameboard");
+import "./style.css";
+const DOM = require("./DOM");
 
-const gameboard = new Gameboard();
+window.onload = () => {
+  // DOM.greetingPage();
+  DOM.gameInitPage();
+};
