@@ -1,5 +1,3 @@
-const Ship = require("./ship");
-
 module.exports = class Gameboard {
   constructor() {
     this.nodes = {};
@@ -47,11 +45,11 @@ module.exports = class Gameboard {
           return 0;
         }
         shipLocations.push(newY);
-        shipLocations.forEach((shipLocationX) => {
-          this.nodes[x][shipLocationX] = ship;
-          this.inactiveNodes.push(shipLocationX + y);
-        });
       }
+      shipLocations.forEach((shipLocationY) => {
+        this.nodes[x][shipLocationY] = ship;
+        this.inactiveNodes.push(x + shipLocationY);
+      });
     } else {
       for (let i = 0; i < ship.length; i++) {
         const newX = yNodes.indexOf(x) + i;
@@ -62,11 +60,11 @@ module.exports = class Gameboard {
           return 0;
         }
         shipLocations.push(yNodes[newX]);
-        shipLocations.forEach((shipLocationY) => {
-          this.nodes[shipLocationY][y] = ship;
-          this.inactiveNodes.push(x + shipLocationY);
-        });
       }
+      shipLocations.forEach((shipLocationX) => {
+        this.nodes[shipLocationX][y] = ship;
+        this.inactiveNodes.push(shipLocationX + y);
+      });
     }
     return 1;
   }

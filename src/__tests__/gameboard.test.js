@@ -72,11 +72,11 @@ describe("Gameboard Tests", () => {
           return 0;
         }
         shipLocations.push(newY);
-        shipLocations.forEach((shipLocationY) => {
-          gameboard.nodes[x][shipLocationY] = ship;
-          gameboard.inactiveNodes.push(x + shipLocationY);
-        });
       }
+      shipLocations.forEach((shipLocationY) => {
+        gameboard.nodes[x][shipLocationY] = ship;
+        gameboard.inactiveNodes.push(x + shipLocationY);
+      });
     } else {
       for (let i = 0; i < ship.length; i++) {
         const newX = yNodes.indexOf(x) + i;
@@ -87,11 +87,11 @@ describe("Gameboard Tests", () => {
           return 0;
         }
         shipLocations.push(yNodes[newX]);
-        shipLocations.forEach((shipLocationX) => {
-          gameboard.nodes[shipLocationX][y] = ship;
-          gameboard.inactiveNodes.push(shipLocationX + y);
-        });
       }
+      shipLocations.forEach((shipLocationX) => {
+        gameboard.nodes[shipLocationX][y] = ship;
+        gameboard.inactiveNodes.push(shipLocationX + y);
+      });
     }
     return 1;
   });
