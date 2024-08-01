@@ -7,24 +7,149 @@
 }
 
 :root {
-  --board_width: 50dvw;
-  --board_height: var(--board_width);
+  --board_width: 400px;
+  --board_height: 400px;
+
+  --width-input: 85px;
+  --height-inputs: 27px;
+  --radius-inputs: 0.25rem;
+
+  --width-input-border: 2px;
+
+  --body-accent: #07c;
+
+  --btn-bg: #ff8800;
+  --active-btn: #346c93;
+
+  --textfld-bg: #222;
+  --textfld-border: #333;
+  --textfld-active-border: #444;
+  --textfld-focus-border: var(--body-accent);
+}
+
+body {
+  height: 100vh;
+
+  color-scheme: dark;
+  background-color: #333;
+  color: white;
 }
 
 .main {
   height: 100%;
 }
 
-.player_1Board,
+.main,
+.playerBoard,
 .row {
   display: flex;
 }
 
-.player_1Board {
+/* Welcome Page */
+
+.main.greetings {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+}
+
+.front-image {
+  width: 50vw;
+  height: 50vh;
+  background-image: url("./assets/images/front-image.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Game Initialization Page */
+
+.main.gameInit {
+  flex-direction: column;
+  align-items: center;
+}
+
+.opponent-banner {
+  display: flex;
+  margin-top: 2rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.player {
+  margin-right: 15px;
+}
+.computer {
+  margin-left: 15px;
+}
+
+.battleship {
+  color: #ff8800;
+}
+/* form */
+
+.form-container {
+  display: grid;
+  flex: 1;
+
+  /* grid-template-columns: ; */
+  grid-template-rows: 150px auto auto 1fr;
+
+  grid-template-areas:
+    "error error"
+    "player1-label player2-label"
+    "player1-input player2-input";
+
+  gap: 0 2rem;
+}
+
+.error-msg {
+  grid-area: error;
+  justify-self: center;
+  align-self: center;
+
+  font-weight: 700;
+  color: red;
+}
+
+label {
+  justify-self: center;
+  color: white;
+}
+
+input,
+input:focus {
+  height: 50px;
+  border: var(--width-input-border) solid var(--textfld-border);
+  background-color: var(--textfld-bg);
+
+  outline: 0;
+}
+
+input:active,
+input:focus {
+  border-color: var(--textfld-active-border);
+}
+
+input#player-1 {
+  grid-area: player1-input;
+}
+
+input#player-2 {
+  grid-area: player2-input;
+}
+
+.start {
+  margin: 0 0 5rem 0;
+}
+
+/* Rules for gameboard */
+.playerBoard {
   width: var(--board_width);
   height: var(--board_height);
   flex-direction: column;
-  /* border: 2px solid black; */
 }
 
 .row {
@@ -33,29 +158,63 @@
 
 .node {
   flex: 1;
-  border: 2px solid black;
+  border: 1px solid black;
 }
 
+/* Makes border uniform */
+
 .node:nth-child(2) {
-  border-left-width: 4px;
+  border-left-width: 2px;
 }
 
 .node:nth-child(11) {
-  border-right-width: 4px;
+  border-right-width: 2px;
 }
 
 .row:nth-child(2) > * {
-  border-top-width: 4px;
+  border-top-width: 2px;
 }
 
 .row:nth-child(11) > * {
-  border-bottom-width: 4px;
+  border-bottom-width: 2px;
 }
 
+/* Removes the border from the x & y axis */
+
+/* first column */
 .node:first-child {
   border-width: 0;
+  align-self: center;
+  text-align: end;
+  padding-right: 4px;
 }
 
+/* first row */
 .row:first-child > * {
   border-width: 0;
+  align-self: end;
+  text-align: center;
+}
+
+/* Button general style */
+
+.btn {
+  width: var(--width-input);
+  height: var(--height-inputs);
+  border-radius: var(--radius-inputs);
+  background-color: var(--btn-bg);
+  border-color: var(--textfld-border);
+  color: white;
+  font-weight: 700;
+}
+
+.btn.active {
+  background-color: var(--active-btn);
+}
+
+@media screen and (max-width: 650px) {
+  .front-image {
+    height: 130px;
+    background-size: contain;
+  }
 }
