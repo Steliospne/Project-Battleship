@@ -41,8 +41,14 @@ module.exports = class Gameboard {
     const xInRange = yNodes.includes(x);
     const yInRange = y >= 0 && y <= 9;
     let shipLocations = [];
+    const shipLocation = [];
 
-    if (!xInRange || !yInRange || coordinate.length > 2) {
+    if (
+      !xInRange ||
+      !yInRange ||
+      coordinate.length > 2 ||
+      typeof this.nodes[x][y] === "object"
+    ) {
       return 0;
     }
 
@@ -51,7 +57,11 @@ module.exports = class Gameboard {
         const newY = y + i;
         const newY_InRange = newY >= 0 && newY <= 9;
 
-        if (!xInRange || !newY_InRange) {
+        if (
+          !xInRange ||
+          !newY_InRange ||
+          typeof this.nodes[x][newY] === "object"
+        ) {
           shipLocations = [];
           return 0;
         }
@@ -59,14 +69,18 @@ module.exports = class Gameboard {
       }
       shipLocations.forEach((shipLocationY) => {
         this.nodes[x][shipLocationY] = ship;
-        this.inactiveNodes.push(x + shipLocationY);
+        shipLocation.push(x + shipLocationY);
       });
     } else {
       for (let i = 0; i < ship.length; i++) {
         const newX = yNodes.indexOf(x) + i;
         const newX_InRange = newX < yNodes.length;
 
-        if (!newX_InRange || !yInRange) {
+        if (
+          !newX_InRange ||
+          !yInRange ||
+          typeof this.nodes[yNodes[newX]][y] === "object"
+        ) {
           shipLocations = [];
           return 0;
         }
@@ -74,10 +88,11 @@ module.exports = class Gameboard {
       }
       shipLocations.forEach((shipLocationX) => {
         this.nodes[shipLocationX][y] = ship;
-        this.inactiveNodes.push(shipLocationX + y);
+        shipLocation.push(shipLocationX + y);
       });
     }
-    return 1;
+    this.inactiveNodes.push(...shipLocation);
+    return [1, shipLocation];
   }
 
   receiveAttack(coordinates) {
