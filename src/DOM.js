@@ -59,13 +59,13 @@ module.exports = class DOM {
     opponentContainer.append(opponentTitle, btnContainer);
     DOM.main.append(opponentContainer, DOM.getPlayersForm(), startButton);
 
-    playerButton.addEventListener("click", DOM.eventHandler);
-    computerButton.addEventListener("click", DOM.eventHandler);
-    startButton.addEventListener("click", DOM.eventHandler);
+    playerButton.addEventListener("click", DOM.eventHandlerInitPage);
+    computerButton.addEventListener("click", DOM.eventHandlerInitPage);
+    startButton.addEventListener("click", DOM.eventHandlerInitPage);
     document.querySelector(".form-container").innerHTML = "";
   }
 
-  static getPlayersForm() {
+  static getPlayersForm(event) {
     const formContainer = document.createElement("form");
     const player_1_label = document.createElement("label");
     const player_1_input = document.createElement("input");
@@ -90,39 +90,140 @@ module.exports = class DOM {
     player_2_input.setAttribute("required", "");
     player_2_input.setAttribute("id", "player-2");
 
-    formContainer.append(
-      errorMessage,
-      player_1_label,
-      player_1_input,
-      player_2_label,
-      player_2_input
-    );
+    if (!event) {
+      return formContainer;
+    } else if (event.target.textContent === "Player") {
+      formContainer.append(
+        errorMessage,
+        player_1_label,
+        player_1_input,
+        player_2_label,
+        player_2_input
+      );
+    } else {
+      formContainer.append(errorMessage, player_1_label, player_1_input);
+    }
 
     return formContainer;
   }
 
   static prepTurnPage(player) {
     DOM.main.innerHTML = "";
+    DOM.main.className = "main gamePrep";
+    const currentPlayer = player;
     const boardWrapper = document.createElement("div");
-    const playerBoard = DOM.renderBoard();
+    const playerBoard = DOM.createBoard();
     const playerName = document.createElement("h1");
+    const fleetWrapper = document.createElement("div");
+    const fleet = DOM.createFleet();
     const readyButton = document.createElement("button");
 
     boardWrapper.className = "board wrapper";
     playerBoard.className = "playerBoard";
     playerName.className = "player-name";
+    fleetWrapper.className = "fleet-wrapper";
+    fleet.className = "fleet";
+
     readyButton.className = "ready btn";
 
-    playerName.textContent = player;
+    playerName.textContent = currentPlayer;
     readyButton.textContent = "Ready";
 
+    let dragged = null;
+    let shipPartClicked = null;
+
+    fleet.childNodes.forEach((el) => {
+      if (!el.className.includes("name")) {
+        el.addEventListener("dragstart", (event) => {
+          dragged = event.target;
+        });
+
+        el.addEventListener("mousedown", (e) => {
+          shipPartClicked = e.target.classList[1];
+        });
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      const ships = Controller.player_1.gameboard.fleet;
+      e.key === "r" && fleet.className.includes("vertical")
+        ? fleet.classList.remove("vertical")
+        : fleet.classList.add("vertical");
+
+      for (const ship in ships) {
+        ships[ship].isHorizontal === true
+          ? (ships[ship].isHorizontal = false)
+          : (ships[ship].isHorizontal = true);
+      }
+    });
+
+    playerBoard.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+
+    playerBoard.addEventListener("dragenter", (e) => {});
+
+    playerBoard.addEventListener("drop", (e) => {
+      const targetCoordinates = e.target.classList[1];
+      const coordinates =
+        targetCoordinates.slice(0, 1) +
+        (+targetCoordinates.slice(1) - 1 - +shipPartClicked);
+
+      const ship = dragged.classList[0];
+      const shipPlacement = Controller.handleShipPlacement(
+        currentPlayer,
+        coordinates,
+        ship
+      );
+
+      if (shipPlacement[0] === 1) {
+        shipPlacement[1].forEach((node) => {
+          node = node.slice(0, 1) + (+node.slice(1) + 1);
+          let target = document.getElementsByClassName(node)[0];
+          target.classList.add("ship-node", ship);
+        });
+        dragged.parentNode.removeChild(dragged.previousSibling);
+        dragged.parentNode.removeChild(dragged);
+      }
+    });
+
+    playerBoard.addEventListener("click", (e) => {
+      const target = e.target;
+      let deletedShip = null;
+      if (target.className.includes("ship-node")) {
+        const shipName = target.classList[3];
+        document.querySelector(".playerBoard").childNodes.forEach((row) => {
+          row.childNodes.forEach((node) => {
+            if (node.className.includes(shipName)) {
+              const x = node.classList[1][0];
+              const y = +node.classList[1][1];
+
+              node.classList.remove("ship-node", shipName);
+              deletedShip = shipName;
+
+              if (!Controller.player_1.name === playerName) {
+                Controller.player_2.gameboard.nodes[x][y - 1] = undefined;
+              }
+              Controller.player_1.gameboard.nodes[x][y - 1] = undefined;
+            }
+          });
+        });
+      }
+      if (deletedShip) {
+        DOM.createFleet(deletedShip).addEventListener("dragstart", (event) => {
+          dragged = event.target;
+        });
+      }
+    });
+
     boardWrapper.append(playerName, playerBoard);
-    DOM.main.append(boardWrapper, readyButton);
+    fleetWrapper.append(fleet);
+    DOM.main.append(boardWrapper, fleetWrapper, readyButton);
   }
 
   static gameTurnPage() {}
 
-  static renderBoard() {
+  static createBoard() {
     const board = document.createElement("div");
     const keys = Object.keys(Controller.player_1.gameboard.nodes);
 
@@ -149,22 +250,69 @@ module.exports = class DOM {
     return board;
   }
 
-  static eventHandler(event) {
+  static createFleet(ship) {
+    const ships = Controller.player_1.gameboard.fleet;
+
+    if (ship) {
+      const fleet = document.querySelector(".fleet");
+      const shipEl = document.createElement("div");
+      const shipName = document.createElement("div");
+
+      shipEl.className = ship + " ship";
+      shipName.className = "ship-name";
+      shipName.textContent = ship;
+
+      shipEl.setAttribute("draggable", "true");
+
+      fleet.append(shipName);
+      for (let i = 0; i < ships[ship].length; i++) {
+        const shipNodes = document.createElement("div");
+        shipNodes.className = "ship-node " + i;
+        shipEl.append(shipNodes);
+      }
+      fleet.append(shipEl);
+      return shipEl;
+    }
+
+    const fleet = document.createElement("div");
+    fleet.className = "fleet";
+    for (const ship in ships) {
+      const shipEl = document.createElement("div");
+      const shipName = document.createElement("div");
+
+      shipEl.className = ship + " ship";
+      shipName.className = "ship-name";
+      shipName.textContent = ship;
+
+      shipEl.setAttribute("draggable", "true");
+
+      fleet.append(shipName);
+      for (let i = 0; i < ships[ship].length; i++) {
+        const shipNodes = document.createElement("div");
+        shipNodes.className = "ship-node " + i;
+        shipEl.append(shipNodes);
+      }
+      fleet.append(shipEl);
+    }
+    return fleet;
+  }
+
+  static eventHandlerInitPage(event) {
     const playerButton = document.querySelectorAll("button")[0];
     const computerButton = document.querySelectorAll("button")[1];
 
     const player = document.querySelector("#player");
     const computer = document.querySelector("#computer");
-    const form = document.querySelector(".form-container");
+    let form = document.querySelector(".form-container");
 
     const errorMessage = form.children[0];
 
     switch (event.target.textContent) {
       case "Player":
-        handlePlayerButton();
+        handlePlayerButton(event);
         break;
       case "Computer":
-        handleComputerButton();
+        handleComputerButton(event);
         break;
       case "Start Game":
         handleStartButton();
@@ -176,11 +324,8 @@ module.exports = class DOM {
           if (!computerButton.className.includes("active")) {
             playerButton.classList.remove("active");
             computerButton.classList.add("active");
-
-            const form = document.querySelector(".form-container");
-            form.removeChild(form.childNodes[4]);
-            form.removeChild(form.childNodes[3]);
           }
+          form.replaceWith(DOM.getPlayersForm(event));
         }
 
         function handlePlayerButton() {
@@ -190,19 +335,27 @@ module.exports = class DOM {
           }
 
           if (playerButton.className.includes("active")) {
-            const form = document.querySelector(".form-container");
-            form.replaceWith(DOM.getPlayersForm());
+            form.replaceWith(DOM.getPlayersForm(event));
           }
         }
 
         function handleStartButton() {
-          const player_1Name = form.children[2].value;
-          let player_2Name = form.children[4];
-          if (player_2Name) {
+          const player_1NameField = form.children[2];
+          const player_2NameField = form.children[4];
+
+          let player_1Name;
+          let player_2Name;
+
+          if (player_1NameField) {
+            player_1Name = form.children[2].value;
+          }
+          if (player_1NameField) {
             player_2Name = form.children[4].value;
           }
 
-          if (!player_1Name || !player_2Name) {
+          if (!player_1NameField || !player_2NameField) return;
+
+          if (player_1Name === "" || player_2Name === "") {
             errorMessage.textContent = "Both names must be filled!";
             return;
           }
@@ -211,7 +364,7 @@ module.exports = class DOM {
 
           if (player.className.includes("active")) {
             Controller.init(player_1Name, player_2Name);
-            DOM.prepTurnPage();
+            DOM.prepTurnPage(player_1Name);
           }
         }
     }
