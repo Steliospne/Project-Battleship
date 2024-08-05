@@ -146,7 +146,7 @@ input#player-2 {
 /* Rules for game setup page */
 .main.gamePrep {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 0.3fr;
 }
 
@@ -159,10 +159,13 @@ input#player-2 {
 .fleet {
   display: grid;
   grid-template-columns: auto min-content;
+  gap: 5px;
+  align-items: center;
 }
 
 .fleet.vertical {
   grid-template-columns: repeat(5, 35px);
+  align-items: unset;
 }
 
 .ship-name {

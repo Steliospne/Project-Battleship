@@ -146,9 +146,11 @@ module.exports = class DOM {
 
     document.addEventListener("keydown", (e) => {
       const ships = Controller.player_1.gameboard.fleet;
-      e.key === "r" && fleet.className.includes("vertical")
-        ? fleet.classList.remove("vertical")
-        : fleet.classList.add("vertical");
+      if (e.key === "r" && fleet.className.includes("vertical")) {
+        fleet.classList.remove("vertical");
+      } else if (e.key === "r") {
+        fleet.classList.add("vertical");
+      }
 
       for (const ship in ships) {
         ships[ship].isHorizontal === true
@@ -161,7 +163,31 @@ module.exports = class DOM {
       e.preventDefault();
     });
 
-    playerBoard.addEventListener("dragenter", (e) => {});
+    playerBoard.addEventListener("dragenter", (e) => {
+      const targetX = e.target.classList[1][0];
+      const targetY = e.target.classList[1].slice(1);
+      for (let i = 0; i < dragged.childNodes.length; i++) {
+        let newY = +targetY + i;
+        if (newY < 11) {
+          document.getElementsByClassName(
+            targetX + newY
+          )[0].style.backgroundColor = "green";
+        }
+      }
+    });
+
+    playerBoard.addEventListener("dragleave", (e) => {
+      const targetX = e.target.classList[1][0];
+      const targetY = e.target.classList[1].slice(1);
+      for (let i = 0; i < dragged.childNodes.length; i++) {
+        let newY = +targetY + i;
+        if (newY < 11) {
+          document.getElementsByClassName(
+            targetX + newY
+          )[0].style.backgroundColor = "";
+        }
+      }
+    });
 
     playerBoard.addEventListener("drop", (e) => {
       const targetCoordinates = e.target.classList[1];
