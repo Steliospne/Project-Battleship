@@ -3,8 +3,12 @@ const Controller = require("./controller");
 module.exports = class DOM {
   main;
 
-  static greetingPage() {
+  static pageTemplete() {
     DOM.main = document.createElement("div");
+  }
+
+  static greetingPage() {
+    DOM.pageTemplete();
     DOM.main.className = "main greetings";
 
     const greetContainer = document.createElement("div");
@@ -107,10 +111,36 @@ module.exports = class DOM {
     return formContainer;
   }
 
+  static instrucntions() {
+    const instr_wrapper = document.createElement("div");
+    const labelDiv = document.createElement("div");
+    const toRotate = document.createElement("li");
+    const toDelete = document.createElement("li");
+    const list = document.createElement("ul");
+
+    instr_wrapper.className = "instruction-wrapper";
+    labelDiv.className = "instruction-label";
+    list.classList = "instruction-list";
+
+    labelDiv.textContent = "Instructions";
+
+    toRotate.innerHTML = `<span style='color:#2dba4e;'>Rotate:</span> Ships before dragging them
+    by pressing the <span style='color:#2dba4e;'>R</span> button on your keyboard.`;
+
+    toDelete.innerHTML = `<span style='color:red;'>Delete:</span> Ships you have placed on the board
+    by clicking on them.`;
+
+    list.append(toRotate, toDelete);
+    instr_wrapper.append(labelDiv, list);
+    return instr_wrapper;
+  }
+
   static prepTurnPage(player) {
     DOM.main.innerHTML = "";
     DOM.main.className = "main gamePrep";
     const currentPlayer = player;
+    const msgBox = document.createElement("div");
+    const instructions = DOM.instrucntions();
     const boardWrapper = document.createElement("div");
     const playerBoard = DOM.createBoard();
     const playerName = document.createElement("h1");
@@ -118,6 +148,7 @@ module.exports = class DOM {
     const fleet = DOM.createFleet();
     const readyButton = document.createElement("button");
 
+    msgBox.className = "msg-box";
     boardWrapper.className = "board wrapper";
     playerBoard.className = "playerBoard";
     playerName.className = "player-name";
@@ -145,7 +176,12 @@ module.exports = class DOM {
     });
 
     document.addEventListener("keydown", (e) => {
-      const ships = Controller.player_1.gameboard.fleet;
+      let ships;
+      if (playerName.textContent === Controller.player_1.name) {
+        ships = Controller.player_1.gameboard.fleet;
+      } else {
+        ships = Controller.player_2.gameboard.fleet;
+      }
       if (e.key === "r" && fleet.className.includes("vertical")) {
         fleet.classList.remove("vertical");
       } else if (e.key === "r") {
@@ -163,33 +199,38 @@ module.exports = class DOM {
       e.preventDefault();
     });
 
-    playerBoard.addEventListener("dragenter", (e) => {
-      const targetX = e.target.classList[1][0];
-      const targetY = e.target.classList[1].slice(1);
-      for (let i = 0; i < dragged.childNodes.length; i++) {
-        let newY = +targetY + i;
-        if (newY < 11) {
-          document.getElementsByClassName(
-            targetX + newY
-          )[0].style.backgroundColor = "green";
-        }
-      }
-    });
+    // playerBoard.addEventListener("dragenter", (e) => {
+    //   const targetX = e.target.classList[1][0];
+    //   const targetY = e.target.classList[1].slice(1);
+    //   for (let i = 0; i < dragged.childNodes.length; i++) {
+    //     let newY = +targetY + i;
+    //     if (newY < 11) {
+    //       document.getElementsByClassName(
+    //         targetX + newY
+    //       )[0].style.backgroundColor = "green";
+    //     }
+    //   }
+    // });
 
-    playerBoard.addEventListener("dragleave", (e) => {
-      const targetX = e.target.classList[1][0];
-      const targetY = e.target.classList[1].slice(1);
-      for (let i = 0; i < dragged.childNodes.length; i++) {
-        let newY = +targetY + i;
-        if (newY < 11) {
-          document.getElementsByClassName(
-            targetX + newY
-          )[0].style.backgroundColor = "";
-        }
-      }
-    });
+    // playerBoard.addEventListener("dragleave", (e) => {
+    //   const targetX = e.target.classList[1][0];
+    //   const targetY = e.target.classList[1].slice(1);
+    //   for (let i = 0; i < dragged.childNodes.length; i++) {
+    //     let newY = +targetY + i;
+    //     if (newY < 11) {
+    //       document.getElementsByClassName(
+    //         targetX + newY
+    //       )[0].style.backgroundColor = "";
+    //     }
+    //   }
+    // });
 
     playerBoard.addEventListener("drop", (e) => {
+      if (
+        !e.target.className.match(/[a-z]/) &&
+        !e.target.className.match(/[0-9]/)
+      )
+        return;
       const targetCoordinates = e.target.classList[1];
       const coordinates =
         targetCoordinates.slice(0, 1) +
@@ -242,12 +283,32 @@ module.exports = class DOM {
       }
     });
 
+    readyButton.addEventListener("click", (e) => {
+      console.log(!(fleet.childNodes.length === 0), fleet.childNodes.length);
+      if (!(fleet.childNodes.length === 0)) {
+        console.log("im in");
+        msgBox.textContent = "You must place all your ships first!";
+        return;
+      }
+      msgBox.textContent = "";
+      Controller.turnManager(playerName.textContent, 1);
+      console.log("ready to play");
+    });
+
     boardWrapper.append(playerName, playerBoard);
     fleetWrapper.append(fleet);
-    DOM.main.append(boardWrapper, fleetWrapper, readyButton);
+    DOM.main.append(
+      msgBox,
+      boardWrapper,
+      instructions,
+      fleetWrapper,
+      readyButton
+    );
   }
 
-  static gameTurnPage() {}
+  static gameTurnPage() {
+    DOM.main.innerHTML = "";
+  }
 
   static createBoard() {
     const board = document.createElement("div");
@@ -264,9 +325,10 @@ module.exports = class DOM {
         i === 1 && j === 0
           ? (node.textContent = "")
           : i === 1 && j > 0
-          ? (node.textContent = j)
+          ? (node.textContent = j) && (node.className = `node ${j}`)
           : i > 1 && j === 0
-          ? (node.textContent = keys[i - 2])
+          ? (node.textContent = keys[i - 2]) &&
+            (node.className = `node ${keys[i - 2]}`)
           : (node.className = `node ${keys[i - 2]}${j}`);
 
         row.append(node);

@@ -20,4 +20,19 @@ module.exports = class Controller {
     // currentPlayer.gameboard.placeShip(coordinates, currentShip);
     return currentPlayer.gameboard.placeShip(coordinates, currentShip);
   }
+
+  static turnManager(player, state) {
+    const DOM = require("./DOM.js");
+
+    console.log("i am knocking the door");
+    console.log(this.player_1.name === player && state === 1);
+    if (this.player_1.name === player && state === 1) {
+      DOM.prepTurnPage(this.player_2.name);
+      return;
+    }
+    if (this.player_2.name === player && state === 1) {
+      console.log(this.player_1, this.player_2);
+      DOM.gameTurnPage();
+    }
+  }
 };
