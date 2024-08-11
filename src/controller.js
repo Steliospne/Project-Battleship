@@ -2,8 +2,9 @@ const Player = require("./player");
 const Gameboard = require("./gameboard");
 
 module.exports = class Controller {
-  player_1;
-  player_2;
+  static player_1;
+  static player_2;
+  static turn = 0;
 
   static init(player_1, player_2) {
     this.player_1 = new Player(player_1, new Gameboard());
@@ -17,22 +18,43 @@ module.exports = class Controller {
       ? (currentPlayer = Controller.player_1)
       : (currentPlayer = Controller.player_2);
     currentShip = currentPlayer.gameboard.fleet[ship];
-    // currentPlayer.gameboard.placeShip(coordinates, currentShip);
+
     return currentPlayer.gameboard.placeShip(coordinates, currentShip);
   }
 
-  static turnManager(player, state) {
+  static turnManager(player) {
     const DOM = require("./DOM.js");
 
-    console.log("i am knocking the door");
-    console.log(this.player_1.name === player && state === 1);
-    if (this.player_1.name === player && state === 1) {
+    if (this.player_1.name === player && Controller.turn === 0) {
       DOM.prepTurnPage(this.player_2.name);
+      Controller.turn++;
       return;
     }
-    if (this.player_2.name === player && state === 1) {
-      console.log(this.player_1, this.player_2);
-      DOM.gameTurnPage();
+
+    if (this.player_2.name === player && Controller.turn === 1) {
+      Controller.turn = Controller.turn + 2;
+      DOM.transitionPage(this.player_1);
+      return;
+    }
+
+    if (Controller.turn % 2 === 0 && Controller.turn !== 0) {
+      if (this.player_1.gameboard.isGameOver()) {
+        DOM.gameOverPage(this.player_2);
+        return;
+      }
+      DOM.transitionPage(this.player_1);
+      Controller.turn++;
+      return;
+    }
+
+    if (Controller.turn % 2 !== 0) {
+      if (this.player_2.gameboard.isGameOver()) {
+        DOM.gameOverPage(this.player_1);
+        return;
+      }
+      DOM.transitionPage(this.player_2);
+      Controller.turn++;
+      return;
     }
   }
 };
