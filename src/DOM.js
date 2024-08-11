@@ -1,14 +1,14 @@
 const Controller = require("./controller");
 
 module.exports = class DOM {
-  main;
+  static main;
 
-  static pageTemplete() {
+  static pageTemplate() {
     DOM.main = document.createElement("div");
   }
 
   static greetingPage() {
-    DOM.pageTemplete();
+    DOM.pageTemplate();
     DOM.main.className = "main greetings";
 
     const greetContainer = document.createElement("div");
@@ -75,10 +75,10 @@ module.exports = class DOM {
     const player_1_input = document.createElement("input");
     const player_2_label = document.createElement("label");
     const player_2_input = document.createElement("input");
-    const errorMessage = document.createElement("span");
+    const msgBox = document.createElement("span");
 
     formContainer.className = "form-container";
-    errorMessage.className = "error-msg";
+    msgBox.className = "msg-box";
 
     player_1_label.textContent = "Player 1 name:";
     player_2_label.textContent = "Player 2 name:";
@@ -98,20 +98,20 @@ module.exports = class DOM {
       return formContainer;
     } else if (event.target.textContent === "Player") {
       formContainer.append(
-        errorMessage,
+        msgBox,
         player_1_label,
         player_1_input,
         player_2_label,
         player_2_input
       );
     } else {
-      formContainer.append(errorMessage, player_1_label, player_1_input);
+      formContainer.append(msgBox, player_1_label, player_1_input);
     }
 
     return formContainer;
   }
 
-  static instrucntions() {
+  static instructions() {
     const instr_wrapper = document.createElement("div");
     const labelDiv = document.createElement("div");
     const toRotate = document.createElement("li");
@@ -140,7 +140,7 @@ module.exports = class DOM {
     DOM.main.className = "main gamePrep";
     const currentPlayer = player;
     const msgBox = document.createElement("div");
-    const instructions = DOM.instrucntions();
+    const instructions = DOM.instructions();
     const boardWrapper = document.createElement("div");
     const playerBoard = DOM.createBoard();
     const playerName = document.createElement("h1");
@@ -149,7 +149,7 @@ module.exports = class DOM {
     const readyButton = document.createElement("button");
 
     msgBox.className = "msg-box";
-    boardWrapper.className = "board wrapper";
+    boardWrapper.className = "board-wrapper";
     playerBoard.className = "playerBoard";
     playerName.className = "player-name";
     fleetWrapper.className = "fleet-wrapper";
@@ -170,28 +170,28 @@ module.exports = class DOM {
         });
 
         el.addEventListener("mousedown", (e) => {
-          shipPartClicked = e.target.classList[1];
+          shipPartClicked = Number(e.target.classList[1]);
         });
       }
     });
 
     document.addEventListener("keydown", (e) => {
       let ships;
-      if (playerName.textContent === Controller.player_1.name) {
+      if (currentPlayer === Controller.player_1.name) {
         ships = Controller.player_1.gameboard.fleet;
       } else {
         ships = Controller.player_2.gameboard.fleet;
       }
       if (e.key === "r" && fleet.className.includes("vertical")) {
+        for (const ship in ships) {
+          ships[ship].isHorizontal = true;
+        }
         fleet.classList.remove("vertical");
       } else if (e.key === "r") {
+        for (const ship in ships) {
+          ships[ship].isHorizontal = false;
+        }
         fleet.classList.add("vertical");
-      }
-
-      for (const ship in ships) {
-        ships[ship].isHorizontal === true
-          ? (ships[ship].isHorizontal = false)
-          : (ships[ship].isHorizontal = true);
       }
     });
 
@@ -232,9 +232,19 @@ module.exports = class DOM {
       )
         return;
       const targetCoordinates = e.target.classList[1];
-      const coordinates =
-        targetCoordinates.slice(0, 1) +
-        (+targetCoordinates.slice(1) - 1 - +shipPartClicked);
+      const fleetIsVertical = fleet.className.includes("vertical");
+      let y;
+      let x;
+      if (!fleetIsVertical) {
+        x = targetCoordinates.slice(0, 1);
+        y = +targetCoordinates.slice(1) - 1 - shipPartClicked;
+      } else {
+        x = targetCoordinates.slice(0, 1);
+        let tempX = x.charCodeAt() - shipPartClicked;
+        x = String.fromCharCode(tempX);
+        y = +targetCoordinates.slice(1) - 1;
+      }
+      const coordinates = x + y;
 
       const ship = dragged.classList[0];
       const shipPlacement = Controller.handleShipPlacement(
@@ -263,36 +273,39 @@ module.exports = class DOM {
           row.childNodes.forEach((node) => {
             if (node.className.includes(shipName)) {
               const x = node.classList[1][0];
-              const y = +node.classList[1][1];
+              const y = +node.classList[1].slice(1);
 
               node.classList.remove("ship-node", shipName);
               deletedShip = shipName;
 
-              if (!Controller.player_1.name === playerName) {
+              if (!(Controller.player_1.name === currentPlayer)) {
                 Controller.player_2.gameboard.nodes[x][y - 1] = undefined;
+              } else {
+                Controller.player_1.gameboard.nodes[x][y - 1] = undefined;
               }
-              Controller.player_1.gameboard.nodes[x][y - 1] = undefined;
             }
           });
         });
       }
+      console.log(Controller.player_1.gameboard, Controller.player_2.gameboard);
       if (deletedShip) {
-        DOM.createFleet(deletedShip).addEventListener("dragstart", (event) => {
+        const restoredShip = DOM.createFleet(deletedShip);
+        restoredShip.addEventListener("dragstart", (event) => {
           dragged = event.target;
+        });
+        restoredShip.addEventListener("mousedown", (e) => {
+          shipPartClicked = e.target.classList[1];
         });
       }
     });
 
     readyButton.addEventListener("click", (e) => {
-      console.log(!(fleet.childNodes.length === 0), fleet.childNodes.length);
       if (!(fleet.childNodes.length === 0)) {
-        console.log("im in");
         msgBox.textContent = "You must place all your ships first!";
         return;
       }
       msgBox.textContent = "";
       Controller.turnManager(playerName.textContent, 1);
-      console.log("ready to play");
     });
 
     boardWrapper.append(playerName, playerBoard);
@@ -306,12 +319,176 @@ module.exports = class DOM {
     );
   }
 
-  static gameTurnPage() {
+  static gameStartPage(player) {
+    let currentPlayer = null;
+    let enemy = null;
+
+    if (player.name === Controller.player_1.name) {
+      currentPlayer = Controller.player_1;
+      enemy = Controller.player_2;
+    } else {
+      currentPlayer = Controller.player_2;
+      enemy = Controller.player_1;
+    }
+
     DOM.main.innerHTML = "";
+    DOM.main.className = "main game-start";
+
+    const playerBoardWrapper = document.createElement("div");
+    const enemyBoardWrapper = document.createElement("div");
+    const playerName = document.createElement("h1");
+    const enemyName = document.createElement("h1");
+    const playerBoard = DOM.createBoard();
+    const enemyBoard = DOM.createBoard(true);
+    const endTurnButton = document.createElement("button");
+    const msgBox = document.createElement("div");
+
+    playerName.className = "player-name";
+    enemyName.className = "enemy-name";
+    playerBoard.className = "playerBoard";
+    enemyBoard.className = "enemyBoard";
+    playerBoardWrapper.className = "player-board-wrapper";
+    enemyBoardWrapper.className = "enemy-board-wrapper";
+    endTurnButton.className = "end-turn btn";
+    msgBox.className = "msg-box";
+
+    playerName.textContent = currentPlayer.name + " (You)";
+    enemyName.textContent = enemy.name + " (Enemy)";
+    endTurnButton.textContent = "End Turn";
+
+    playerBoardWrapper.append(playerName, playerBoard);
+    enemyBoardWrapper.append(enemyName, enemyBoard);
+    DOM.main.append(
+      msgBox,
+      playerBoardWrapper,
+      enemyBoardWrapper,
+      endTurnButton
+    );
+    document.body.append(DOM.main);
+
+    const isEmpty = (array) => {
+      return array.length === 0 ? true : false;
+    };
+
+    // renders current player's ships on board
+    for (const rowKey in currentPlayer.gameboard.nodes) {
+      const rowArray = currentPlayer.gameboard.nodes[rowKey];
+      for (let node = 0; node < rowArray.length; node++) {
+        if (typeof rowArray[node] === "object") {
+          const shipNode = rowKey + (node + 1);
+          const currentNode = document.getElementsByClassName(shipNode)[0];
+
+          currentNode.style.backgroundColor = "orange";
+        }
+      }
+    }
+
+    // renders enemy hits
+    const enemyHits = currentPlayer.gameboard.hits;
+    if (!isEmpty(enemyHits)) {
+      enemyHits.forEach((node) => {
+        const currentNode = document.getElementsByClassName(node)[0];
+        // currentNode.style.backgroundColor = "red";
+        currentNode.textContent = "❌";
+      });
+    }
+
+    // renders current player's missed shots
+    const missedShots = enemy.gameboard.missedShots;
+    if (!isEmpty(missedShots)) {
+      missedShots.forEach((node) => {
+        const currentNode = document.getElementsByClassName("enemy " + node)[0];
+        currentNode.style.backgroundColor = "lightblue";
+      });
+    }
+
+    // renders current player's hits
+    const hits = enemy.gameboard.hits;
+    if (!isEmpty(hits)) {
+      hits.forEach((node) => {
+        const currentNode = document.getElementsByClassName("enemy " + node)[0];
+        currentNode.style.backgroundColor = "red";
+      });
+    }
+
+    let enemyShipNodes = [];
+    for (const rowKey in enemy.gameboard.nodes) {
+      const rowArray = enemy.gameboard.nodes[rowKey];
+      for (let node = 0; node < rowArray.length; node++) {
+        if (typeof rowArray[node] === "object") {
+          enemyShipNodes.push(rowKey + (node + 1));
+        }
+      }
+    }
+
+    let played = false;
+    const playerMove = (e) => {
+      const target = e.target.classList[2];
+      if (enemy.gameboard.inactiveNodes.includes(target)) return;
+
+      const currentNode = document.getElementsByClassName("enemy " + target)[0];
+      if (enemyShipNodes.includes(target)) {
+        enemy.gameboard.receiveAttack(target);
+        currentNode.style.backgroundColor = "red";
+      } else {
+        enemy.gameboard.receiveAttack(target);
+        currentNode.style.backgroundColor = "lightblue";
+      }
+      enemyBoard.removeEventListener("click", playerMove);
+      played = true;
+    };
+
+    enemyBoard.addEventListener("click", playerMove);
+
+    function handleEndTurn() {
+      if (played) {
+        Controller.turnManager(currentPlayer);
+        msgBox.textContent = "";
+        played = false;
+        return;
+      }
+      msgBox.textContent = "You have not played yet!";
+    }
+
+    endTurnButton.addEventListener("click", handleEndTurn);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleEndTurn();
+    });
   }
 
-  static createBoard() {
+  static transitionPage(player) {
+    DOM.main.innerHTML = "";
+    DOM.main.className = "main transition-page";
+    const transitionEl = document.createElement("div");
+    transitionEl.className = "transition";
+    transitionEl.textContent = `Press any key or click anywhere to start your turn`;
+    DOM.main.append(transitionEl);
+
+    function handleTransition() {
+      document.removeEventListener("keydown", handleTransition);
+      DOM.gameStartPage(player);
+    }
+
+    transitionEl.addEventListener("click", handleTransition);
+    document.addEventListener("keydown", handleTransition);
+  }
+
+  static gameOverPage(player) {
+    DOM.main.innerHTML = "";
+    DOM.main.className = "main game-over";
+    const winner = document.createElement("div");
+    winner.className = "winner";
+    winner.innerHTML = `
+    Congratulation <span style='color:orange;'>${player.name}</span> you have won 
+    and now stand King of the high seas 🐉`;
+    DOM.main.append(winner);
+  }
+
+  static createBoard(enemy = false) {
     const board = document.createElement("div");
+    // Debug
+    // Controller.init("a", "a2");
     const keys = Object.keys(Controller.player_1.gameboard.nodes);
 
     for (let i = 1; i < 12; i++) {
@@ -322,14 +499,25 @@ module.exports = class DOM {
         const node = document.createElement("div");
         node.className = "node";
 
-        i === 1 && j === 0
-          ? (node.textContent = "")
-          : i === 1 && j > 0
-          ? (node.textContent = j) && (node.className = `node ${j}`)
-          : i > 1 && j === 0
-          ? (node.textContent = keys[i - 2]) &&
-            (node.className = `node ${keys[i - 2]}`)
-          : (node.className = `node ${keys[i - 2]}${j}`);
+        if (!enemy) {
+          i === 1 && j === 0
+            ? (node.textContent = "")
+            : i === 1 && j > 0
+            ? (node.textContent = j) && (node.className = `node ${j}`)
+            : i > 1 && j === 0
+            ? (node.textContent = keys[i - 2]) &&
+              (node.className = `node ${keys[i - 2]}`)
+            : (node.className = `node ${keys[i - 2]}${j}`);
+        } else {
+          i === 1 && j === 0
+            ? (node.textContent = "")
+            : i === 1 && j > 0
+            ? (node.textContent = j) && (node.className = `node ${j}`)
+            : i > 1 && j === 0
+            ? (node.textContent = keys[i - 2]) &&
+              (node.className = `node ${keys[i - 2]}`)
+            : (node.className = `node enemy ${keys[i - 2]}${j}`);
+        }
 
         row.append(node);
       }
@@ -393,7 +581,7 @@ module.exports = class DOM {
     const computer = document.querySelector("#computer");
     let form = document.querySelector(".form-container");
 
-    const errorMessage = form.children[0];
+    const msgBox = form.children[0];
 
     switch (event.target.textContent) {
       case "Player":
@@ -444,11 +632,16 @@ module.exports = class DOM {
           if (!player_1NameField || !player_2NameField) return;
 
           if (player_1Name === "" || player_2Name === "") {
-            errorMessage.textContent = "Both names must be filled!";
+            msgBox.textContent = "Both names must be filled!";
             return;
           }
 
-          errorMessage.textContent = "";
+          if (player_1Name === player_2Name) {
+            msgBox.textContent = "Names must be the different!";
+            return;
+          }
+
+          msgBox.textContent = "";
 
           if (player.className.includes("active")) {
             Controller.init(player_1Name, player_2Name);
