@@ -5,6 +5,7 @@ module.exports = class Gameboard {
     this.nodes = {};
     this.missedShots = [];
     this.inactiveNodes = [];
+    this.hits = [];
 
     this.fleet = {
       carrier: new Ship(5),
@@ -91,15 +92,15 @@ module.exports = class Gameboard {
         shipLocation.push(shipLocationX + y);
       });
     }
-    this.inactiveNodes.push(...shipLocation);
     return [1, shipLocation];
   }
 
   receiveAttack(coordinates) {
     const x = coordinates[0];
-    const y = +coordinates[1];
-
+    const y = +coordinates.slice(1) - 1;
     if (typeof this.nodes[x][y] === "object") {
+      this.inactiveNodes.push(coordinates);
+      this.hits.push(coordinates);
       this.nodes[x][y].hit();
       return;
     }
