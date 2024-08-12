@@ -64,7 +64,7 @@ module.exports = class Gameboard {
           typeof this.nodes[x][newY] === "object"
         ) {
           shipLocations = [];
-          return 0;
+          return [0];
         }
         shipLocations.push(newY);
       }
@@ -83,7 +83,7 @@ module.exports = class Gameboard {
           typeof this.nodes[yNodes[newX]][y] === "object"
         ) {
           shipLocations = [];
-          return 0;
+          return [0];
         }
         shipLocations.push(yNodes[newX]);
       }
@@ -102,10 +102,11 @@ module.exports = class Gameboard {
       this.inactiveNodes.push(coordinates);
       this.hits.push(coordinates);
       this.nodes[x][y].hit();
-      return;
+      return 0;
     }
     this.missedShots.push(coordinates);
     this.inactiveNodes.push(coordinates);
+    return 1;
   }
 
   isGameOver() {

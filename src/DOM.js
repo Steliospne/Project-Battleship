@@ -91,8 +91,37 @@ module.exports = class DOM {
 
     player_1_input.setAttribute("required", "");
     player_1_input.setAttribute("id", "player-1");
+    player_1_input.setAttribute("maxlength", "10");
+
     player_2_input.setAttribute("required", "");
     player_2_input.setAttribute("id", "player-2");
+    player_2_input.setAttribute("maxlength", "10");
+
+    const formValidation = (e) => {
+      const targetEl = e.target;
+      const target = e.target.value;
+      const punctuationCharacters = /[.,;:!?()\[\]{}'"\/\\|`~@#$%^&*+=<>]/;
+      const hasSpace = target.includes(" ");
+      const hasPunctuation = punctuationCharacters.test(target);
+
+      if (hasSpace) {
+        targetEl.classList.add("error");
+        msgBox.textContent = "Names can't have spaces";
+      } else if (hasPunctuation) {
+        targetEl.classList.add("error");
+        msgBox.textContent = "Invalid name";
+      } else {
+        targetEl.classList.remove("error");
+        if (
+          !player_1_input.className.includes("error") &&
+          !player_2_input.className.includes("error")
+        )
+          msgBox.textContent = "";
+      }
+    };
+
+    player_1_input.addEventListener("input", formValidation);
+    player_2_input.addEventListener("input", formValidation);
 
     if (!event) {
       return formContainer;
@@ -287,7 +316,7 @@ module.exports = class DOM {
           });
         });
       }
-      console.log(Controller.player_1.gameboard, Controller.player_2.gameboard);
+
       if (deletedShip) {
         const restoredShip = DOM.createFleet(deletedShip);
         restoredShip.addEventListener("dragstart", (event) => {
@@ -305,7 +334,7 @@ module.exports = class DOM {
         return;
       }
       msgBox.textContent = "";
-      Controller.turnManager(playerName.textContent, 1);
+      Controller.turnManager(currentPlayer);
     });
 
     boardWrapper.append(playerName, playerBoard);
@@ -460,17 +489,21 @@ module.exports = class DOM {
   static transitionPage(player) {
     DOM.main.innerHTML = "";
     DOM.main.className = "main transition-page";
+    const transitionElWrapper = document.createElement("div");
     const transitionEl = document.createElement("div");
-    transitionEl.className = "transition";
+
+    transitionElWrapper.className = "transition";
     transitionEl.textContent = `Press any key or click anywhere to start your turn`;
-    DOM.main.append(transitionEl);
+
+    transitionElWrapper.append(transitionEl);
+    DOM.main.append(transitionElWrapper);
 
     function handleTransition() {
       document.removeEventListener("keydown", handleTransition);
       DOM.gameStartPage(player);
     }
 
-    transitionEl.addEventListener("click", handleTransition);
+    transitionElWrapper.addEventListener("click", handleTransition);
     document.addEventListener("keydown", handleTransition);
   }
 
@@ -480,7 +513,7 @@ module.exports = class DOM {
     const winner = document.createElement("div");
     winner.className = "winner";
     winner.innerHTML = `
-    Congratulation <span style='color:orange;'>${player.name}</span> you have won 
+    Congratulations <span style='color:orange;'>${player.name}</span> you have won 
     and now stand King of the high seas 🐉`;
     DOM.main.append(winner);
   }
@@ -576,9 +609,6 @@ module.exports = class DOM {
   static eventHandlerInitPage(event) {
     const playerButton = document.querySelectorAll("button")[0];
     const computerButton = document.querySelectorAll("button")[1];
-
-    const player = document.querySelector("#player");
-    const computer = document.querySelector("#computer");
     let form = document.querySelector(".form-container");
 
     const msgBox = form.children[0];
@@ -622,16 +652,36 @@ module.exports = class DOM {
           let player_1Name;
           let player_2Name;
 
-          if (player_1NameField) {
-            player_1Name = form.children[2].value;
-          }
-          if (player_1NameField) {
-            player_2Name = form.children[4].value;
+          if (player_1NameField !== undefined) {
+            player_1Name = player_1NameField.value;
+          } else {
+            return;
           }
 
-          if (!player_1NameField || !player_2NameField) return;
+          if (player_2NameField === undefined) {
+            player_2Name = "computer";
+          } else {
+            player_2Name = player_2NameField.value;
+          }
+
+          if (
+            player_1NameField !== undefined &&
+            player_2NameField !== undefined
+          ) {
+            if (
+              player_1NameField.className.includes("error") ||
+              player_2NameField.className.includes("error")
+            ) {
+              return;
+            }
+          }
+
+          if (msgBox !== "undefind") msgBox.textContent = "";
 
           if (player_1Name === "" || player_2Name === "") {
+            if (!player_2NameField) {
+              msgBox.textContent = "Name must be filled!";
+            }
             msgBox.textContent = "Both names must be filled!";
             return;
           }
@@ -641,9 +691,7 @@ module.exports = class DOM {
             return;
           }
 
-          msgBox.textContent = "";
-
-          if (player.className.includes("active")) {
+          if (player_1Name !== undefined) {
             Controller.init(player_1Name, player_2Name);
             DOM.prepTurnPage(player_1Name);
           }
