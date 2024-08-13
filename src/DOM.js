@@ -453,7 +453,11 @@ module.exports = class DOM {
     let played = false;
     const playerMove = (e) => {
       const target = e.target.classList[2];
-      if (enemy.gameboard.inactiveNodes.includes(target)) return;
+      if (
+        enemy.gameboard.inactiveNodes.includes(target) ||
+        target === undefined
+      )
+        return;
 
       const currentNode = document.getElementsByClassName("enemy " + target)[0];
       if (enemyShipNodes.includes(target)) {

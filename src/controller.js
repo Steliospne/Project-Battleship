@@ -62,13 +62,18 @@ module.exports = class Controller {
         return;
       }
     } else {
+      if (Controller.turn === 0) {
+        DOM.gameStartPage(this.player_1);
+        Controller.turn++;
+        return;
+      }
       DOM.gameStartPage(this.player_1);
       Controller.turn++;
       let result = false;
       while (!result) {
         result = this.player_1.gameboard.receiveAttack(this.player_2.play());
-        console.log(result);
       }
+      console.log(result);
       if (this.player_1.gameboard.isGameOver()) {
         DOM.gameOverPage(this.player_2);
         return;
@@ -78,7 +83,6 @@ module.exports = class Controller {
         DOM.gameOverPage(this.player_1);
         return;
       }
-      console.log("NPC plays", Controller.turn);
     }
   }
 };

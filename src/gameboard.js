@@ -96,6 +96,8 @@ module.exports = class Gameboard {
   }
 
   receiveAttack(coordinates) {
+    const isValid = /^[A-Za-z]\d{1,2}$/.test(coordinates);
+    if (!isValid) return;
     const x = coordinates[0];
     const y = +coordinates.slice(1) - 1;
     if (typeof this.nodes[x][y] === "object") {
