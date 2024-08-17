@@ -1,3 +1,3 @@
-# Some Cool Name
+# Project: Battleship
 
-Live url:
+Live url:https://steliospne.github.io/Project-Battleship/
